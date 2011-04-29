@@ -1,0 +1,175 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script type="text/javascript" src="./ext-all.js"></script>
+<title>Clock in reverse using Ext JS - version 4</title>
+<script type="text/javascript">
+
+Ext.onReady(function() {
+	var radius,clock,hands,timeNow;
+	
+	timeNow = new Date();
+	
+	/*
+	A container object for the hands of the clock. Defined later.
+	*/
+	hands = {};
+	hands.hour = null;
+	hands.minute = null;
+	hands.seconds = null;
+	
+	radius=40;
+	
+	/*
+		We draw the inital clock and some of the basic detail.
+		There is much more which could be done here.
+		
+		1) Roman Numerials as an option.
+		2) Lines / dots for each minutes
+	*/
+	clock = Ext.create('Ext.draw.Component',{
+		id:"clock",
+		width: 300,
+		height: 300,
+		renderTo: Ext.get("clock-panel"),
+		items: [{
+				type: 'circle',
+				fill: '#fff',
+				stroke: '#333',
+				radius: radius,
+				y:0,
+				x:0
+			},{
+				type: 'text',
+				text: '12',
+				x:-10,
+				y:-(radius-10)
+		    },{
+				type: 'text',
+				text: '3',
+				translate: {
+					x:-(radius-5),
+					y:0
+				}
+			},{
+				type: 'text',
+				text: '6',
+				translate: {
+					x:-5,
+					y:(radius-10)
+          		}
+			},{
+          		type: 'text',
+          		text: '9',
+          		translate: {
+          			x:(radius-10),
+          			y:0
+          		}
+			}]
+	});
+	
+	
+	hands.hour = clock.surface.add({
+		type: 'rect',
+		width: 1,
+		height: 25,
+		fill: '#111',
+		y:0,
+		x:-1,
+		rotate:{
+			y:0,
+			degrees: 180 + ((360/12) * (12-timeNow.getHours()))
+		}
+   	});
+	hands.hour.show(true);
+
+	hands.minute = clock.surface.add({
+		type: 'rect',
+		width: 1,
+		height: 30,
+		fill: '#111',
+		y:0,
+		x:-1,
+		rotate:{
+			y:0,
+			degrees: 180 + ((360/60) * (60-timeNow.getMinutes()))
+		}
+	});
+	hands.minute.show(true);
+
+	hands.seconds = clock.surface.add({
+		type: 'rect',
+		width: .5,
+		height: 30,
+		fill: '#ff0000',
+		y:0,
+		x:-1,
+		rotate:{
+			y:0,
+			degrees: 180 + ((360/60) * (60-timeNow.getSeconds()) )
+		}
+	});
+	hands.seconds.show(true);
+
+	/*
+		Add a nice little middle cirlce to hide the rough edges as the hands tick.
+	*/
+	clock.surface.add({
+		type: 'circle',
+		fill: '#000',
+		radius: 2,
+		y:0,
+		x:0
+	}).show(true);
+
+	/*
+	Instead of using setInterval directly I plugged into the task system built into Ext Js.
+	*/
+	var task = {
+		run: function(){
+			var timeNow,seconds,minutes;
+			timeNow = new Date();
+			seconds = timeNow.getSeconds();
+		
+			hands.seconds.setAttributes({
+				rotate: {
+					degrees: 180 + ((360/60)* (60-seconds) )
+				}
+			},true);
+			
+			/*
+			Instead of redrawing the minute hands and hour hands every second I built in a semi caching system.
+			Due to setInterval not being 100% accurate I have given a 5 second window to make sure the minute and the hour hands are rendered correctly.
+			
+			It is not needed to do this for a minute, as setInterval is only ever out by a few seconds, depending on the users load in the browser.
+			*/
+			if (seconds <5) {
+				
+				minutes = timeNow.getMinutes();
+				hands.minutes.setAttributes({
+					rotate: {
+						degrees: 180 + ((360/60)* (60-minutes) )
+					}
+				},true);
+				
+				if (minutes <1)
+				{
+					hands.hour.setAttributes({
+						rotate: {
+							degrees: 180 + ((360/12)* (12-timeNow.getHours()) )
+						}
+					},true);					
+				}
+			}
+		},
+		interval: 1000 //1 second
+	};
+	Ext.TaskManager.start(task);
+});
+</script>  
+</head> 
+<body>
+	<div id="clock-panel"></div>
+	<p>This clock was created with <a href="http://www.sencha.com/products/extjs" target="_blank">Ext Js</a>(version 4) javascript library.</p>
+</body>
+</html>
